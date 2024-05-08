@@ -4,10 +4,8 @@ import com.blog.hadoop.jobs.CensusDataAnalyzerJob;
 import com.blog.hadoop.util.JobParams;
 
 public class AppMain {
-
     public static void main(String[] args) {
         JobParams jobParams = new JobParams("input", "output");
-
         if (args.length == 2) {
             System.out.println("Using custom job params.");
             jobParams.setInputPath(args[0]);
@@ -16,13 +14,9 @@ public class AppMain {
             System.out.println("Usage: $hadoop jar target/census-data-analysis-1.0.jar input output");
             System.exit(1);
         }
-
         boolean success = new CensusDataAnalyzerJob().runJob(jobParams);
-
-        if (success) {
-            System.out.println("Job completed.");
-        } else {
-            throw new RuntimeException("Job failed.");
+        if (!success) {
+            System.exit(1);
         }
     }
 }
