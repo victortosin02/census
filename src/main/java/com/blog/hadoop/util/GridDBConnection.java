@@ -1,42 +1,40 @@
 package com.blog.hadoop.util;
 
-import com.toshiba.mwcloud.gs.GridStore;
-import com.toshiba.mwcloud.gs.GridStoreFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 
 public class GridDBConnection {
-    private static GridStore store;
+    private static Connection connection;
 
-    public static GridStore getGridStore() throws IOException {
-        if (store == null) {
-            try {
-                Properties properties = new Properties();
-                try (InputStream input = GridDBConnection.class.getClassLoader().getResourceAsStream("griddb.properties")) {
-                    if (input == null) {
-                        System.out.println("Sorry, unable to find griddb.properties");
-                        return null;
-                    }
-                    properties.load(input);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+    public static Connection getConnection() throws IOException, SQLException {
+        if (connection == null) {
+            Properties properties = new Properties();
+            try (InputStream input = GridDBConnection.class.getClassLoader().getResourceAsStream("griddb.properties")) {
+                if (input == null) {
+                    System.out.println("Sorry, unable to find griddb.properties");
                     return null;
                 }
+                properties.load(input);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                return null;
+            }
 
-                Properties props = new Properties();
-                props.setProperty("notificationMember", properties.getProperty("griddb.notificationMember"));
-                props.setProperty("clusterName", properties.getProperty("griddb.clusterName"));
-                props.setProperty("user", properties.getProperty("griddb.user"));
-                props.setProperty("password", properties.getProperty("griddb.password"));
+            String url = "jdbc:gs://" + properties.getProperty("griddb.notificationMember") + "/" + properties.getProperty("griddb.clusterName");
+            String user = properties.getProperty("griddb.user");
+            String password = properties.getProperty("griddb.password");
 
-                store = GridStoreFactory.getInstance().getGridStore(props);
-            } catch (Exception e) {
+            try {
+                connection = DriverManager.getConnection(url, user, password);
+            } catch (SQLException e) {
                 e.printStackTrace();
-                throw new IOException("Failed to get GridStore connection", e);
+                throw new IOException("Failed to get JDBC connection", e);
             }
         }
-        return store;
+        return connection;
     }
 }

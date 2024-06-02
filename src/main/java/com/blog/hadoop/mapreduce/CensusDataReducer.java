@@ -1,14 +1,14 @@
 package com.blog.hadoop.mapreduce;
 
 import com.blog.hadoop.util.GridDBConnection;
-import com.toshiba.mwcloud.gs.Container;
-import com.toshiba.mwcloud.gs.GridStore;
-import com.toshiba.mwcloud.gs.Row;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class CensusDataReducer extends Reducer<Text, Text, Text, NullWritable> {
     @Override
@@ -27,41 +27,39 @@ public class CensusDataReducer extends Reducer<Text, Text, Text, NullWritable> {
             maxFamilySize = Math.max(maxFamilySize, familySize);
         }
 
-        GridStore store = null;
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
         try {
-            store = GridDBConnection.getGridStore();
-            if (store == null) {
-                throw new IOException("Unable to get GridStore connection");
+            connection = GridDBConnection.getConnection();
+            if (connection == null) {
+                throw new IOException("Unable to get GridDB connection");
             }
 
-            // Define the container and row for inserting data
-            String containerName = "census_data";
-            Container<String, Row> container = store.getContainer(containerName);
+            String insertSQL = "INSERT INTO census_data (occupation, min_income, max_income, min_family_size, max_family_size) " +
+                    "VALUES (?, ?, ?, ?, ?)";
+            preparedStatement = connection.prepareStatement(insertSQL);
+            preparedStatement.setString(1, key.toString());
+            preparedStatement.setInt(2, minIncome);
+            preparedStatement.setInt(3, maxIncome);
+            preparedStatement.setInt(4, minFamilySize);
+            preparedStatement.setInt(5, maxFamilySize);
 
-            if (container == null) {
-                // Create container if it does not exist
-                container = store.putCollection(containerName, Row.class);
-            }
-
-            // Create a row for insertion
-            Row row = container.createRow();
-            row.setString(0, key.toString());
-            row.setInteger(1, minIncome);
-            row.setInteger(2, maxIncome);
-            row.setInteger(3, minFamilySize);
-            row.setInteger(4, maxFamilySize);
-
-            // Insert the row
-            container.put(row);
-
-        } catch (Exception e) {
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
             e.printStackTrace();
             throw new IOException(e);
         } finally {
-            if (store != null) {
+            if (preparedStatement != null) {
                 try {
-                    store.close();
-                } catch (Exception e) {
+                    preparedStatement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
