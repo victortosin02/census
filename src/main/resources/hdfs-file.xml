@@ -1,0 +1,25 @@
+<configuration>
+    <!-- NameNode specific properties -->
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:///app/hadoop/dfs/name</value>
+    </property>
+
+    <!-- DataNode specific properties -->
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:///app/hadoop/dfs/data</value>
+    </property>
+
+    <!-- Block replication factor -->
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+
+    <!-- Permissions and quota -->
+    <property>
+        <name>dfs.permissions</name>
+        <value>false</value>
+    </property>
+</configuration>
