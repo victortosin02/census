@@ -78,6 +78,118 @@ By leveraging Java, Hadoop, JDBC, and GridDB, we are able to derive valuable ins
     </dependency>
 </dependencies>
 ```
+## Setting Up Hadoop and Configuration Files
+- Install Hadoop: Follow the official Apache Hadoop installation guide for your operating system. Ensure Java is installed and configured correctly as Hadoop is Java-based.
+- Configure Hadoop: Create a resources folder in your project directory to store Hadoop configuration files.
+- Add Configuration Files:
+## yarn-site.xml
+```
+<configuration>
+    <!-- ResourceManager address -->
+    <property>
+        <name>yarn.resourcemanager.address</name>
+        <value>localhost:8032</value>
+    </property>
+
+    <!-- Scheduler address -->
+    <property>
+        <name>yarn.resourcemanager.scheduler.address</name>
+        <value>localhost:8030</value>
+    </property>
+
+    <!-- ResourceManager WebApp address -->
+    <property>
+        <name>yarn.resourcemanager.webapp.address</name>
+        <value>localhost:8088</value>
+    </property>
+
+    <!-- NodeManager auxiliary services -->
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+
+    <!-- Container memory settings -->
+    <property>
+        <name>yarn.nodemanager.resource.memory-mb</name>
+        <value>2048</value>
+    </property>
+</configuration>
+```
+## core-site.xml
+```
+<configuration>
+    <!-- Define default filesystem and address -->
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    </property>
+
+    <!-- Hadoop home directory -->
+    <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/app/hadoop/tmp</value>
+        <description>A base for other temporary directories.</description>
+    </property>
+
+    <!-- I/O File Buffer Size -->
+    <property>
+        <name>io.file.buffer.size</name>
+        <value>131072</value>
+    </property>
+</configuration>
+```
+## hdfs-file.xml
+```
+<configuration>
+    <!-- NameNode specific properties -->
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:///app/hadoop/dfs/name</value>
+    </property>
+
+    <!-- DataNode specific properties -->
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:///app/hadoop/dfs/data</value>
+    </property>
+
+    <!-- Block replication factor -->
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+
+    <!-- Permissions and quota -->
+    <property>
+        <name>dfs.permissions</name>
+        <value>false</value>
+    </property>
+</configuration>
+```
+## mapred-site.xml
+```
+<configuration>
+    <!-- JobTracker settings -->
+    <property>
+        <name>mapreduce.jobtracker.address</name>
+        <value>localhost:54311</value>
+    </property>
+
+    <!-- Framework name -->
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+
+    <!-- Specify MapReduce job history directory -->
+    <property>
+        <name>mapreduce.jobhistory.done-dir</name>
+        <value>/mr-history/done</value>
+    </property>
+</configuration>
+```
+
 ## Data Ingestion
 As the first workflow in our project architecture, we will leverage on a mapper class in a Hadoop MapReduce job, specifically tailored for the purpose of data ingestion. This mapper class parses each line of input data, extracts relevant fields (occupation, income, and family size), and emits key-value pairs where the occupation serves as the key and income along with family size is the value. This processed data will be further aggregated and analyzed in subsequent stages of the MapReduce job. Below is the code that handles data ingestion into our system.
 
