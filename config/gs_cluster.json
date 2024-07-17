@@ -1,0 +1,6 @@
+{
+  "notificationMember": "127.0.0.1:10001",
+  "clusterName": "myCluster",
+  "user": "admin",
+  "password": "admin"
+}
