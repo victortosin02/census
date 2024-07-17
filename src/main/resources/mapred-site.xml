@@ -1,0 +1,19 @@
+<configuration>
+    <!-- JobTracker settings -->
+    <property>
+        <name>mapreduce.jobtracker.address</name>
+        <value>localhost:54311</value>
+    </property>
+
+    <!-- Framework name -->
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+
+    <!-- Specify MapReduce job history directory -->
+    <property>
+        <name>mapreduce.jobhistory.done-dir</name>
+        <value>/mr-history/done</value>
+    </property>
+</configuration>

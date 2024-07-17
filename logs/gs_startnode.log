@@ -1,0 +1,6 @@
+2024-07-17T15:53:04.735Z [10] [INFO] <module>(58) /usr/bin/gs_startnode start.
+2024-07-17T15:53:04.870Z [10] [DEBUG] <module>(112) command: ['/usr/bin/gsserver', '--conf', '/usr/griddb/conf']
+2024-07-17T15:53:05.946Z [10] [ERROR] <module>(130) AD0106: Process is stopped. (pid=19, exitCode=1)
+2024-07-17T15:53:05.963Z [10] [ERROR] <module>(144) AD0103: Unable to start node.
+2024-07-17T17:13:44.856Z [11] [INFO] <module>(58) /usr/bin/gs_startnode start.
+2024-07-17T17:13:44.934Z [11] [DEBUG] <module>(112) command: ['/usr/bin/gsserver', '--conf', '/usr/griddb/conf']
