@@ -3,7 +3,7 @@
 In this project, we will be concentrating on census analytics system designed to ingest data from a source system, analyze and generate insights from census data, and finally store the processed data in a target syatem. Census data in this case refers to the demographic information retrieved from a population at regular intervals, typically conducted by governments to gather information about the population's characteristics, such as age, gender, race, income, education level, household composition, and more. The census analytics system has proved efficient where census officials can upload census data from household enumeration and insights are generated after the processing operations on this data. To narrow this down in terms of deliverables, this project seeks to analyze and calculate the minimum and maximum income and family size for each occupation and store the results in a GridDB database leveraging on stacks of technologies such as Node JS, JDBC, Docker and GridDB.
 
 ## Methodology
-The purpose of this project is to analyze sample data of households from an enumeration exercise from a source system, analyze the ingested data and load analyzed data to a database. To accomplish this, we will be leveraging seems Docker because it makes it easy to spin up all the required services.
+The purpose of this project is to analyze sample data of households from an enumeration exercise from a source system, analyze the ingested data and load analyzed data to a database. To accomplish this, we will be leveraging Docker because it makes it easy to spin up all the required services.
 
 ## Technologies Used:
 The following stack of technologies were leveraged on to efficiently analyze the census data: Java for programming
