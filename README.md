@@ -6,7 +6,7 @@ This compression method promises to be more efficient at compressing your data r
 
 Another feature we would like to go over quickly is regarding the CLI. With v5.6, the GridDB team released the ability to save variables within the CLI. And though this may seem minor, we will do a quick look at an unexpected benefit of this feature.
 
-** Methodology **
+## Methodology
 As explained above, we will need to easily compare between three instances of GridDB with the same dataset. To accomplish this, it seems docker would be the easiest method because we can easily spin up or down new instances and change the compression method for each instance. If we do this, then we simply use the same dataset or the same data generation script for each of the instances.
 
 To get a robust enough dataset to really test the compression alogrithm differences, we decided on 100 million rows of data. Specifically, we wanted the dataset to be similar enough in some respects that the compression can do its job so that we in turn can effectively measure its effectiveness.
@@ -15,7 +15,7 @@ The three docker containers will be griddb-server1, griddb-server2, and griddb-s
 
 So when we run our gen-script, we can use command line arguments to specify which container we want to target. More on that in the next section.
 
-** How to Follow Along **
+##  How to Follow Along **
 If you plan to build and test out these methods yourself while you read along, you can grab the source code from our GitHub page: .
 
 Once you have the repo, you can start with spinng up your GridDB servers. We will get into how to run the generation data script to push 100m rows of data into your servers in the next section.
