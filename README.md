@@ -25,9 +25,9 @@ If you plan to code along yourself while you read this article, you can grab the
 
 `git clone https://github.com/victortosin02/census`
 
-Once you have cloned the repo or downloaded the project folders and files, you need to build and start the griddb server and later get into the data analzyer ad]nd laoding script to push rows of data into the provisioned Griddb server.
+Once you have cloned the repo or downloaded the project folders and files, you need to build and start the griddb server and later get into the data-analyzer.js script that pushes rows of data into the provisioned Griddb database.
 
-To get spin up the application, simply run:
+To spin up the application, simply run:
 
 `docker-compose up --build`
 
