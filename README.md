@@ -27,7 +27,7 @@ From the implementation end, a node.js script has been provided called data-anal
 
 Below is the NodeJS script responsible for ingesting, analyzing and loading the data to the griddb database:
 
-`
+```
 const fs = require('fs');
 const csv = require('csv-parser');
 const griddb = require('griddb-node-api');
@@ -130,7 +130,7 @@ async function main() {
 }
 
 main();
-`
+```
 
 
 
