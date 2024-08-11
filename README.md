@@ -181,6 +181,7 @@ exec "$@"
 From the implementation end after provisioning and configuring the server environment, we will create a folder called census-analysis which comprises an input.csv file that contains census data that will be ingested and analyzed. Also, we will create a node.js script called data-analyzer.js that ingests data from the csv file, analyzes and calculates the minimum and maximum income and family size for each occupation and store the results in the GridDB database. To ensure portability of the application, the Griddb and NodeJS services were containerized using Docker in such a way that the running of the NodeJS script depends on the Griddb container because without spinning up the Griddb server there will be no target syatem for the running and database loading operation of the NodeJS script. This means that the nodejs script was built into a docker container and then we used that to push data into the GridDB containers with the following commands:
 
 `docker build -t data-analyzer .`
+
 `docker run  --network docker-griddb_default gen griddb-server3:10001`
 
 Below is the NodeJS script responsible for ingesting, analyzing and loading the data to the griddb database:
