@@ -1,3 +1,4 @@
+# Census Data Analytics Using Griddb, Docker and NodeJS
 ## Introduction
 In this project, we will be concentrating on census analytics system designed to ingest data data from a source system, analyze and generate insights from census data, and finally store the processed data in a target syatem. Census data in this case refers to the demographic information retrieved from a population at regular intervals, typically conducted by governments to gather information about the population's characteristics, such as age, gender, race, income, education level, household composition, and more. The census analytics system has proved efficient where census officials can upload census data from household enumeration and insights are generated after the processing operations on this data. To narrow this done in terms of deliverables, this project seeks to analyze and calculate the minimum and maximum income and family size for each occupation and store the results in a GridDB database leveraging on stacks of technologies such as Node JS, JDBC, Docker and GridDB.
 
@@ -5,6 +6,21 @@ We will explore one of Griddb v5.6 new feature to handle scalabilty as data volu
 
 ## Methodology
 The purpose of this project is to analyze sample data of households from an enumeration exercise to a source system, analyze the ingested data and load analyzed data to a database. To accomplish this, we will be leveraging seems Docker because it makes it easy to spin up all the required services.
+
+## Technologies Used:
+The following stack of technologies were leveraged on to efficiently analyze the census data: Java for programming
+
+- Javasccript for programming
+- JDBC for database connectivity
+- GridDB for storing and managing data
+- Docker For Containerization and Application Portability
+
+## Prerequisites
+What you need to install:
+
+- NodeJS
+- Docker Desktop
+- Griddb will be downloaded and installed in a Dockerfile in consquent sections.
 
 ##  How to Follow Along
 If you plan to code along yourself while you read this article, you can grab the source code from the repo below:
@@ -19,8 +35,152 @@ To get spin up the application, simply run:
 
 This starts the griddb and census-analyzer containers in the docker.yaml file:
 
+## Server Provisioning and Configuration
+To efficiently handle the scalability and volume of census data, we leverage Docker for containerization and GridDB for data management. The following steps outline the provisioning and configuration of the GridDB server.
+
+### Step 1: Create a Dockerfile
+We start by creating a Dockerfile to define the environment and installation steps for GridDB.
+
+```
+FROM ubuntu:22.04
+
+# Environment variables
+ENV GRIDDB_VERSION=5.6.0
+ENV GS_HOME=/var/lib/gridstore
+ENV GS_LOG=/var/lib/gridstore/log
+ENV PORT=10001
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install GridDB server and dependencies
+RUN set -eux \
+    && apt-get update \
+    && apt-get install -y systemd dpkg python3 wget jq default-jre --no-install-recommends \
+    && apt-get clean all \
+    && wget -q https://github.com/griddb/griddb/releases/download/v${GRIDDB_VERSION}/griddb_${GRIDDB_VERSION}_amd64.deb --no-check-certificate \
+    && dpkg -i griddb_${GRIDDB_VERSION}_amd64.deb \
+    && rm griddb_${GRIDDB_VERSION}_amd64.deb \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install GridDB C Client and CLI
+RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v${GRIDDB_VERSION}/griddb-c-client_${GRIDDB_VERSION}_amd64.deb \
+    && dpkg -i griddb-c-client_${GRIDDB_VERSION}_amd64.deb \
+    && wget --no-check-certificate https://github.com/griddb/cli/releases/download/v5.3.1/griddb-ce-cli_5.3.1_amd64.deb \
+    && dpkg -i griddb-ce-cli_5.3.1_amd64.deb
+
+# Add startup script and configuration
+ADD start-griddb2.sh /
+ADD .gsshrc /root
+RUN chmod +x start-griddb2.sh
+USER gsadm
+
+ENTRYPOINT ["/bin/bash", "/start-griddb2.sh"]
+EXPOSE $PORT
+CMD ["griddb"]
+```
+### Step 2: Configure GridDB
+We will be creating a .gsshrc file which is crucial for setting up the GridDB cluster in FIXED_LIST mode.
+```
+.gsshrc
+setnode node0 127.0.0.1 10040 22
+setcluster cluster0 myCluster FIXED_LIST 127.0.0.1:10001 $node0
+setclustersql cluster0 myCluster FIXED_LIST 127.0.0.1:20001
+setuser admin admin
+connect $cluster0
+```
+### Step 3: Create the Startup Script
+The start-griddb2.sh script handles the initialization and configuration of GridDB, including setting up the cluster in FIXED_LIST mode and applying the necessary configurations.
+```
+#!/bin/bash
+
+if [ "${1:0:1}" = '-' ]; then
+    set -- griddb "$@"
+fi
+
+# Save configuration to file
+save_config() {
+    echo "GRIDDB_CLUSTER_NAME=\"$GRIDDB_CLUSTER_NAME\"" >> /var/lib/gridstore/conf/gridstore.conf
+    echo "GRIDDB_USERNAME=\"$GRIDDB_USERNAME\""         >> /var/lib/gridstore/conf/gridstore.conf
+    echo "GRIDDB_PASSWORD=\"$GRIDDB_PASSWORD\""         >> /var/lib/gridstore/conf/gridstore.conf
+}
+
+# Get machine IP address
+get_ipadress() {
+    ip_address=$(hostname -I | awk '{print $1}')
+}
+
+# Configure FIXED_LIST mode
+fixlist_config() {
+    jq 'del(.cluster.notificationAddress) | del(.cluster.notificationPort)' /var/lib/gridstore/conf/gs_cluster.json | tee tmp.json > /dev/null
+    jq '.cluster |= .+ {"notificationMember": [{"cluster":{"address", "port":10010}, "sync":{"address","port":10020}, "system":{"address", "port":10040}, "transaction":{"address", "port":10001}, "sql":{"address", "port":20001}}]}' tmp.json | tee tmp_gs_cluster.json >/dev/null
+    mv tmp_gs_cluster.json /var/lib/gridstore/conf/gs_cluster.json
+    rm tmp.json
+    jq --arg ip_address "$ip_address"  '. + { serviceAddress: $ip_address}'  /var/lib/gridstore/conf/gs_node.json  >  tmp_gs_node.json
+    mv tmp_gs_node.json /var/lib/gridstore/conf/gs_node.json
+    sed -i -e s/\"address\":\ null/\"address\":\"$ip_address\"/g \/var/lib/gridstore/conf/gs_cluster.json
+}
+
+# Initialize GridDB system
+if [ "${1}" = 'griddb' ]; then
+    isSystemInitialized=0
+    if [ "$(ls -A /var/lib/gridstore/data)" ]; then
+        isSystemInitialized=1
+    fi
+
+    if [ $isSystemInitialized = 0 ]; then
+        export GRIDDB_CLUSTER_NAME=${GRIDDB_CLUSTER_NAME:-"dockerGridDB"}
+        export GRIDDB_USERNAME=${GRIDDB_USERNAME:-"admin"}
+        export GRIDDB_PASSWORD=${GRIDDB_PASSWORD:-"admin"}
+
+        cp /usr/griddb-${GRIDDB_VERSION}/conf_multicast/* /var/lib/gridstore/conf/.
+        gs_passwd $GRIDDB_USERNAME -p $GRIDDB_PASSWORD
+        sed -i -e s/\"clusterName\":\"\"/\"clusterName\":\"$GRIDDB_CLUSTER_NAME\"/g \/var/lib/gridstore/conf/gs_cluster.json
+
+        if [ ! -z $COMPRESSION_MODE ]; then
+            if [ $COMPRESSION_MODE -eq 1 ]; then 
+                sed -i -e 's/NO_COMPRESSION/COMPRESSION_ZLIB/' \/var/lib/gridstore/conf/gs_node.json
+            elif [ $COMPRESSION_MODE -eq 2 ]; then
+                sed -i -e 's/NO_COMPRESSION/COMPRESSION_ZSTD/' \/var/lib/gridstore/conf/gs_node.json
+            fi
+        fi
+
+        if [ ! -z $NOTIFICATION_ADDRESS ]; then
+            sed -i -e s/\"notificationAddress\":\"239.0.0.1\"/\"notificationAddress\":\"$NOTIFICATION_ADDRESS\"/g \/var/lib/gridstore/conf/gs_cluster.json
+        fi
+
+        if [ ! -z $NOTIFICATION_PORT ]; then
+            sed -i -e s/\"notificationPort\":31999/\"notificationPort\":$NOTIFICATION_PORT/g \/var/lib/gridstore/conf/gs_cluster.json
+        fi
+
+        if [ ! -z $NOTIFICATION_MEMBER ]; then
+            if [ $NOTIFICATION_MEMBER != 1 ]; then
+                echo "$NOTIFICATION_MEMBER invalid. Fixed list GridDB CE mode support one member, please check again !"
+                exit 1
+            fi
+            checkFixList=$(cat /var/lib/gridstore/conf/gs_cluster.json | grep notificationMember)
+            if [ ! -z checkFixList ]; then
+                get_ipadress
+                fixlist_config
+            fi
+        fi
+
+        if [ ! -z $NOTIFICATION_PROVIDER ]; then
+            echo "Provider mode haven't support"
+            exit 1
+        fi
+
+        save_config
+    fi
+
+    . /var/lib/gridstore/conf/gridstore.conf
+    cd /var/lib/gridstore
+    sleep 5 && gs_joincluster -u $GRIDDB_USERNAME/$GRIDDB_PASSWORD -c $GRIDDB_CLUSTER_NAME -w &
+    gsserver --conf ./conf
+fi
+exec "$@"
+```
+
 ## Implementation
-From the implementation end, a node.js script has been provided called data-analyzer.js that ingest data from a csv file, analyzes and calculate the minimum and maximum income and family size for each occupation and store the results in GridDB database. To ensure portability of the application, the Griddb and NodeJS services were containerized using Docker in such a way that the running of the NodeJS script depends on the running of the Griddb container. This means that the nodejs script was built into a docker container and then we used that to push data into the GridDB containers with the following commands:
+From the implementation end after provisioning and configuring the server environment, we will create a folder called census anlysis which comprises an iput.csv file that contains census data that will be igested and analyzed. Also, we will create a node.js script called data-analyzer.js that ingests data from the csv file, analyzes and calculates the minimum and maximum income and family size for each occupation and store the results in the GridDB database. To ensure portability of the application, the Griddb and NodeJS services were containerized using Docker in such a way that the running of the NodeJS script depends on the Griddb container because without spinning up the Griddb server there will be no target syatem for the running and database loading operation of the NodeJS script. This means that the nodejs script was built into a docker container and then we used that to push data into the GridDB containers with the following commands:
 
 `docker build -t data-analyzer .`
 `docker run  --network docker-griddb_default gen griddb-server3:10001`
@@ -132,5 +292,64 @@ async function main() {
 main();
 ```
 
+## Dockerfile for Census Analyzer
+To ensure there is seamless implementation of files in the census-analyzer, it is crucial to properly configure the Dockerfile. This Dockerfile is responsible for setting up the Node.js environment, installing necessary dependencies, and preparing the application to interact with the GridDB C Client. Below is a detailed breakdown of the Dockerfile content and its purpose. The following Dockerfile sets up a Node.js environment and installs the GridDB C Client, ensuring that the census-analyzer can effectively communicate with the GridDB server.
+
+```
+FROM node:18
+
+# Make c_client
+WORKDIR /
+RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.6.0/griddb-c-client_5.6.0_amd64.deb
+RUN dpkg -i griddb-c-client_5.6.0_amd64.deb
 
 
+WORKDIR /app
+COPY package.json /app/package.json
+COPY package-lock.json /app/package-lock.json
+COPY data-analyzer.js /app/data-analyzer.js
+
+RUN npm i
+
+ENTRYPOINT ["node", "data-analyzer.js"]
+```
+
+## Spinning All The services Using Docker Compose Configuration
+To spin up the GridDB server along with the data analyzer service, we use a docker-compose.yaml file which is responsible for spinning up the Griddb server based on the Dockerfile configurations in both griddb-server and census-analyzer folders. The docker-compose confiuration file for spinning all thses services is provided below:
+
+```
+services:
+
+  griddb-server3:
+    build:
+      context: griddb-server
+      dockerfile: Dockerfile
+    container_name: griddb-server3
+    user: root
+    expose:
+      - '10001'
+    environment:
+      NOTIFICATION_MEMBER: 1
+      GRIDDB_CLUSTER_NAME: myCluster
+      COMPRESSION_MODE: 2
+    healthcheck:
+        test: ["CMD", "gs_sh"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+
+  census-analysis: 
+    build:
+      context: census-analysis
+      dockerfile: Dockerfile
+    container_name: census-analysis
+    profiles:
+      - donotstart
+    depends_on:
+      griddb-server:
+        condition: service_healthy
+```
+
+## Conclusion
+In this project, we have successfully built a comprehensive census analytics system leveraging GridDB, Docker, and Node.js. Through this journey, we demonstrated how to set up and configure a scalable and efficient data processing pipeline capable of ingesting, analyzing, and storing census data. The combination of GridDB, Docker, and Node.js has proven to be a powerful stack for building scalable and efficient data analytics systems. By following the outlined steps and leveraging the provided Docker configurations, you can replicate and extend this solution to meet specific needs and handle various data analytics tasks.
+We encourage you to explore the code repository and experiment with the setup to gain a deeper understanding of the system. With these tools and methodologies, you are well-equipped to tackle complex data analytics challenges and derive actionable insights from vast datasets. 
