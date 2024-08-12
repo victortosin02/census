@@ -300,7 +300,7 @@ RUN npm i
 ENTRYPOINT ["node", "data-analyzer.js"]
 ```
 
-## Spinning All The services Using Docker Compose Configuration
+## Spinning All The Services Using Docker Compose Configuration
 To spin up the GridDB server along with the data analyzer service, we use a docker-compose.yaml file which is responsible for spinning up the Griddb server based on the Dockerfile configurations in both griddb-server and census-analyzer folders. The docker-compose confiuration file for spinning all thses services is provided below:
 
 ```
