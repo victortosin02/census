@@ -23,7 +23,7 @@ What you need to install:
 ##  How to Follow Along
 If you plan to code along yourself while you read this article, you can grab the source code from the repo below:
 
-`git clone https://github.com/victortosin02/census`
+`git clone https://github.com/victortosin02/census.git`
 
 Once you have cloned the repo or downloaded the project folders and files, you need to build and start the griddb server and later get into the data-analyzer.js script that pushes rows of data into the provisioned Griddb database.
 
@@ -174,7 +174,9 @@ From the implementation end after provisioning and configuring the server enviro
 
 `docker build -t data-analyzer .`
 
-`docker run  --network docker-griddb_default gen griddb-server3:10001`
+`docker run  --network docker-griddb_default gen griddb-server:10001`
+Where docker-griddb_default is the name of the Docker network you are connecting the container to. This network will be created by Docker Compose when you defined a docker-compose.yml file while gen is the name of the Docker image from which the container will be created. Ensure that this image is available locally or can be pulled from a Docker registry. Finaaly, griddb-server:10001 is the command and argument being passed to the container. In this case, griddb-server:10001 is a custom command or entrypoint defined within the gen image that the container will run when it starts. Here, griddb-server could refer to a command, script, or application within the container. 10001 is an argument passed to the griddb-server command, specifying a port or configuration parameter. Kindly ensure you change these values and parameters based on what is available on your Docker registry.
+
 
 Below is the NodeJS script responsible for ingesting, analyzing and loading the data to the griddb database:
 
