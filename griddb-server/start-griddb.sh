@@ -56,15 +56,15 @@ if [ "${1}" = 'griddb' ]; then
         sed -i -e s/\"clusterName\":\"\"/\"clusterName\":\"$GRIDDB_CLUSTER_NAME\"/g \/var/lib/gridstore/conf/gs_cluster.json
 
 
-        # # Compression Mode
-        # if [ ! -z $COMPRESSION_MODE ]; then
-        #     echo "Compression mode change"
-        #     if [ $COMPRESSION_MODE -eq 1 ]; then 
-        #         sed -i -e 's/NO_COMPRESSION/COMPRESSION_ZLIB/' \/var/lib/gridstore/conf/gs_node.json
-        #     elif [ $COMPRESSION_MODE -eq 2 ]; then
-        #         sed -i -e 's/NO_COMPRESSION/COMPRESSION_ZSTD/' \/var/lib/gridstore/conf/gs_node.json
-        #     fi
-        # fi
+        # Compression Mode
+        if [ ! -z $COMPRESSION_MODE ]; then
+            echo "Compression mode change"
+            if [ $COMPRESSION_MODE -eq 1 ]; then 
+                sed -i -e 's/NO_COMPRESSION/COMPRESSION_ZLIB/' \/var/lib/gridstore/conf/gs_node.json
+            elif [ $COMPRESSION_MODE -eq 2 ]; then
+                sed -i -e 's/NO_COMPRESSION/COMPRESSION_ZSTD/' \/var/lib/gridstore/conf/gs_node.json
+            fi
+        fi
 
         # MULTICAST mode
         if [ ! -z $NOTIFICATION_ADDRESS ]; then

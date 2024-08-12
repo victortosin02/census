@@ -3,22 +3,18 @@
 
 services:
 
-  griddb-server3:
+  griddb-server:
     build:
       context: griddb-server
       dockerfile: Dockerfile
-    container_name: griddb-server3
+    container_name: griddb-server
     user: root
     expose:
       - '10001'
-#    ports:
-#      - "10001:10001"
     environment:
       NOTIFICATION_MEMBER: 1
       GRIDDB_CLUSTER_NAME: myCluster
       COMPRESSION_MODE: 2
- #   volumes:
- #    -  griddb:/var/lib/gridstore
     healthcheck:
         test: ["CMD", "gs_sh"]
         interval: 30s
