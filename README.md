@@ -317,7 +317,6 @@ services:
     environment:
       NOTIFICATION_MEMBER: 1
       GRIDDB_CLUSTER_NAME: myCluster
-      COMPRESSION_MODE: 2
     healthcheck:
         test: ["CMD", "gs_sh"]
         interval: 30s
