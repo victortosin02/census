@@ -169,14 +169,7 @@ exec "$@"
 ```
 
 ## Data Ingestion, Processing and Loading
-From the implementation end after provisioning and configuring the server environment, we will create a folder called census-analysis which comprises an input.csv file that contains census data that will be ingested and analyzed. Also, we will create a node.js script called data-analyzer.js that ingests data from the csv file, analyzes and calculates the minimum and maximum income and family size for each occupation and store the results in the GridDB database. To ensure portability of the application, the Griddb and NodeJS services were containerized using Docker in such a way that the running of the NodeJS script depends on the Griddb container because without spinning up the Griddb server there will be no target syatem for the running and database loading operation of the NodeJS script. This means that the nodejs script was built into a docker container and then we used that to push data into the GridDB containers with the following commands:
-
-`docker build -t data-analyzer .`
-
-`docker run  --network docker-griddb_default gen griddb-server:10001`
-
-Where docker-griddb_default is the name of the Docker network you are connecting the container to. This network will be created by Docker Compose when you defined a docker-compose.yml file while gen is the name of the Docker image from which the container will be created. Ensure that this image is available locally or can be pulled from a Docker registry. Finally, griddb-server:10001 is the command and argument being passed to the container. In this case, griddb-server:10001 is a custom command or entrypoint defined within the gen image that the container will run when it starts. Here, griddb-server could refer to a command, script, or application within the container. 10001 is an argument passed to the griddb-server command, specifying a port or configuration parameter. Kindly ensure you change these values and parameters based on what is available on your Docker registry.
-
+From the implementation end after provisioning and configuring the server environment, we will create a folder called census-analysis which comprises an input.csv file that contains census data that will be ingested and analyzed. Also, we will create a node.js script called data-analyzer.js that ingests data from the csv file, analyzes and calculates the minimum and maximum income and family size for each occupation and store the results in the GridDB database. 
 
 Below is the NodeJS script responsible for ingesting, analyzing and loading the data to the griddb database:
 
@@ -342,6 +335,14 @@ services:
       griddb-server:
         condition: service_healthy
 ```
+
+To ensure portability of the application, the Griddb and NodeJS services were containerized using Docker in such a way that the running of the NodeJS script depends on the Griddb container because without spinning up the Griddb server there will be no target syatem for the database loading operation of the NodeJS script. This means that the nodejs script was built into a docker container and then we used that to push data into the GridDB containers with the following commands:
+
+`docker build -t data-analyzer .`
+
+`docker run  --network <docker-network-name> <docker-image> griddb-server:10001`
+
+Where <docker-network-name> is the name of the Docker network you are connecting the container to. This network will be created by Docker Compose when you defined a docker-compose.yml file while <docker-image> is the name of the Docker image from which the container will be created. Ensure that this image is available locally or can be pulled from a Docker registry. Finally, griddb-server:10001 is the command and argument being passed to the container. In this case, griddb-server:10001 is a custom command or entrypoint defined within the gen image that the container will run when it starts. Here, griddb-server could refer to a command, script, or application within the container. 10001 is an argument passed to the griddb-server command, specifying a port or configuration parameter. Kindly ensure you change these values and parameters based on what is available on your Docker registry.
 
 ## Conclusion
 In this project, we have successfully built a comprehensive census analytics system leveraging GridDB, Docker, and Node.js. Through this journey, we demonstrated how to set up and configure a scalable and efficient data processing pipeline capable of ingesting, analyzing, and storing census data. The combination of GridDB, Docker, and Node.js has proven to be a powerful stack for building scalable and efficient data analytics systems. By following the outlined steps and leveraging the provided Docker configurations, you can replicate and extend this solution to meet specific needs and handle various data analytics tasks.
