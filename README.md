@@ -42,30 +42,36 @@ We start by creating a Dockerfile to define the environment and installation ste
 ```
 FROM ubuntu:22.04
 
-# Environment variables
+# You can download griddb V5.0.0 directly at https://github.com/griddb/griddb/releases/tag/v5.0.0
 ENV GRIDDB_VERSION=5.6.0
 ENV GS_HOME=/var/lib/gridstore
+# Need declare $GS_LOG to start GridDB server
 ENV GS_LOG=/var/lib/gridstore/log
 ENV PORT=10001
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install GridDB server and dependencies
+# Install griddb server
 RUN set -eux \
     && apt-get update \
+    # Install dependencies for griddb
     && apt-get install -y systemd dpkg python3 wget jq default-jre --no-install-recommends \
     && apt-get clean all \
+    # Download package griddb server
     && wget -q https://github.com/griddb/griddb/releases/download/v${GRIDDB_VERSION}/griddb_${GRIDDB_VERSION}_amd64.deb --no-check-certificate \
+    # Install package griddb server
     && dpkg -i griddb_${GRIDDB_VERSION}_amd64.deb \
+    # Remove package
     && rm griddb_${GRIDDB_VERSION}_amd64.deb \
+    # Delete the apt-get lists after installing something
     && rm -rf /var/lib/apt/lists/*
 
-# Install GridDB C Client and CLI
-RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v${GRIDDB_VERSION}/griddb-c-client_${GRIDDB_VERSION}_amd64.deb \
-    && dpkg -i griddb-c-client_${GRIDDB_VERSION}_amd64.deb \
-    && wget --no-check-certificate https://github.com/griddb/cli/releases/download/v5.3.1/griddb-ce-cli_5.3.1_amd64.deb \
-    && dpkg -i griddb-ce-cli_5.3.1_amd64.deb
+# Install GridDB c_client
+RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v${GRIDDB_VERSION}/griddb-c-client_${GRIDDB_VERSION}_amd64.deb
+RUN dpkg -i griddb-c-client_${GRIDDB_VERSION}_amd64.deb
 
-# Add startup script and configuration
+RUN wget --no-check-certificate https://github.com/griddb/cli/releases/download/v5.3.1/griddb-ce-cli_5.3.1_amd64.deb
+RUN dpkg -i griddb-ce-cli_5.3.1_amd64.deb
+
 ADD start-griddb.sh /
 ADD .gsshrc /root
 RUN chmod +x start-griddb.sh
