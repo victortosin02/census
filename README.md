@@ -66,12 +66,12 @@ RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/down
     && dpkg -i griddb-ce-cli_5.3.1_amd64.deb
 
 # Add startup script and configuration
-ADD start-griddb2.sh /
+ADD start-griddb.sh /
 ADD .gsshrc /root
-RUN chmod +x start-griddb2.sh
+RUN chmod +x start-griddb.sh
 USER gsadm
 
-ENTRYPOINT ["/bin/bash", "/start-griddb2.sh"]
+ENTRYPOINT ["/bin/bash", "/start-griddb.sh"]
 EXPOSE $PORT
 CMD ["griddb"]
 ```
@@ -86,7 +86,7 @@ setuser admin admin
 connect $cluster0
 ```
 ### Step 3: Create the Startup Script
-The start-griddb2.sh script handles the initialization and configuration of GridDB, including setting up the cluster in FIXED_LIST mode and applying the necessary configurations.
+The start-griddb.sh script handles the initialization and configuration of GridDB, including setting up the cluster in FIXED_LIST mode and applying the necessary configurations.
 ```
 #!/bin/bash
 
@@ -132,14 +132,6 @@ if [ "${1}" = 'griddb' ]; then
         cp /usr/griddb-${GRIDDB_VERSION}/conf_multicast/* /var/lib/gridstore/conf/.
         gs_passwd $GRIDDB_USERNAME -p $GRIDDB_PASSWORD
         sed -i -e s/\"clusterName\":\"\"/\"clusterName\":\"$GRIDDB_CLUSTER_NAME\"/g \/var/lib/gridstore/conf/gs_cluster.json
-
-        if [ ! -z $COMPRESSION_MODE ]; then
-            if [ $COMPRESSION_MODE -eq 1 ]; then 
-                sed -i -e 's/NO_COMPRESSION/COMPRESSION_ZLIB/' \/var/lib/gridstore/conf/gs_node.json
-            elif [ $COMPRESSION_MODE -eq 2 ]; then
-                sed -i -e 's/NO_COMPRESSION/COMPRESSION_ZSTD/' \/var/lib/gridstore/conf/gs_node.json
-            fi
-        fi
 
         if [ ! -z $NOTIFICATION_ADDRESS ]; then
             sed -i -e s/\"notificationAddress\":\"239.0.0.1\"/\"notificationAddress\":\"$NOTIFICATION_ADDRESS\"/g \/var/lib/gridstore/conf/gs_cluster.json
