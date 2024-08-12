@@ -78,7 +78,6 @@ CMD ["griddb"]
 ### Step 2: Configure GridDB
 We will be creating a .gsshrc file which is crucial for setting up the GridDB cluster in FIXED_LIST mode.
 ```
-.gsshrc
 setnode node0 127.0.0.1 10040 22
 setcluster cluster0 myCluster FIXED_LIST 127.0.0.1:10001 $node0
 setclustersql cluster0 myCluster FIXED_LIST 127.0.0.1:20001
