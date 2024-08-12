@@ -55,7 +55,8 @@ if [ "${1}" = 'griddb' ]; then
         gs_passwd $GRIDDB_USERNAME -p $GRIDDB_PASSWORD
         sed -i -e s/\"clusterName\":\"\"/\"clusterName\":\"$GRIDDB_CLUSTER_NAME\"/g \/var/lib/gridstore/conf/gs_cluster.json
 
-        # # Compression Mode
+
+        # Compression Mode
         if [ ! -z $COMPRESSION_MODE ]; then
             echo "Compression mode change"
             if [ $COMPRESSION_MODE -eq 1 ]; then 
