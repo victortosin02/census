@@ -10,9 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install griddb server
 RUN set -eux \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get update --fix-missing \
+    && apt-get update \
     # Install dependencies for griddb
     && apt-get install -y systemd dpkg python3 wget jq default-jre --no-install-recommends \
     && apt-get clean all \
@@ -32,11 +30,11 @@ RUN dpkg -i griddb-c-client_${GRIDDB_VERSION}_amd64.deb
 RUN wget --no-check-certificate https://github.com/griddb/cli/releases/download/v5.3.1/griddb-ce-cli_5.3.1_amd64.deb
 RUN dpkg -i griddb-ce-cli_5.3.1_amd64.deb
 
-ADD start-griddb.sh /
+ADD start-griddb2.sh /
 ADD .gsshrc /root
-RUN chmod +x start-griddb.sh
+RUN chmod +x start-griddb2.sh
 USER gsadm
 
-ENTRYPOINT ["/bin/bash", "/start-griddb.sh"]
+ENTRYPOINT ["/bin/bash", "/start-griddb2.sh"]
 EXPOSE $PORT
 CMD ["griddb"]

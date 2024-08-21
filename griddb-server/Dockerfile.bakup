@@ -1,4 +1,4 @@
-from griddb/griddb
+FROM griddb/griddb
 
 USER root
 
