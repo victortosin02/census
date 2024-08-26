@@ -1,8 +1,4 @@
-#volumes:
-#  griddb:
-
 services:
-
   griddb-server:
     build:
       context: griddb-server
@@ -11,23 +7,33 @@ services:
     user: root
     expose:
       - '10001'
+      - '10010'
+      - '10020'
+      - '10040'
+      - '20001'
+      - '41999'
     environment:
-      NOTIFICATION_MEMBER: 1
       GRIDDB_CLUSTER_NAME: myCluster
     healthcheck:
-        test: ["CMD", "gs_sh"]
-        interval: 30s
-        timeout: 10s
-        retries: 5
+      test: ["CMD", "gs_stat", "-u", "admin/admin"]
+      interval: 120s
+      timeout: 120s
+      retries: 5
+    networks:
+      - census-master5_default
 
-
-  census-analysis: 
+  census-analysis:
     build:
       context: census-analysis
       dockerfile: Dockerfile
     container_name: census-analysis
-    profiles:
-      - donotstart
     depends_on:
-      griddb-server:
-        condition: service_healthy
+      - griddb-server
+    ports:
+      - "3000:3000"
+    networks:
+      - census-master5_default
+
+networks:
+  census-master5_default:
+    external: true

@@ -2,6 +2,8 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const griddb = require('griddb-node-api');
 
+const containerName = "census-analysis";
+
 // Read CSV file and process data
 function readCSV(filePath) {
     return new Promise((resolve, reject) => {
@@ -15,7 +17,7 @@ function readCSV(filePath) {
 }
 
 // Process data to calculate min and max
-function processData(data) {
+async function processData(data) {
     const occupationStats = {};
 
     data.forEach(row => {
@@ -41,69 +43,74 @@ function processData(data) {
     return occupationStats;
 }
 
-// Insert data into GridDB
-async function insertIntoGridDB(data) {
+// Initialize GridDB Store
+const initStore = async() => {
+    const factory = griddb.StoreFactory.getInstance();
     try {
-        const factory = griddb.StoreFactory.getInstance();
         const store = await factory.getStore({
-            "notificationMember": ['127.0.0.1:10001'],
-            "clusterName": "myCluster",
-            "username": "admin",
-            "password": "admin"
+            notificationMember: "127.0.0.1:10001",
+            clusterName: "myCluster",
+            username: "admin",
+            password: "admin",
         });
+        return store;
+    } catch (e) {
+        console.error("Error initializing GridDB store:", e);
+        throw e;
+    }
+};
 
-        const containerName = 'occupation_statistics';
-        const containerInfo = new griddb.ContainerInfo({
-            name: containerName,
-            columnInfoList: [
-                ['id', griddb.Type.INTEGER],
-                ["occupation", griddb.Type.STRING],
-                ["minIncome", griddb.Type.LONG],
-                ["maxIncome", griddb.Type.LONG],
-                ["minFamilySize", griddb.Type.INTEGER],
-                ["maxFamilySize", griddb.Type.INTEGER]
-            ],
-            'type': griddb.ContainerType.COLLECTION,
-            'rowKey': true
-        });
+// Initialize Container Info
+function initContainer() {
+    const conInfo = new griddb.ContainerInfo({
+        name: containerName,
+        columnInfoList: [
+            ["occupation", griddb.Type.STRING],
+            ["minIncome", griddb.Type.LONG],
+            ["maxIncome", griddb.Type.LONG],
+            ["minFamilySize", griddb.Type.INTEGER],
+            ["maxFamilySize", griddb.Type.INTEGER]
+        ],
+        type: griddb.ContainerType.COLLECTION,
+        rowKey: true,
+    });
 
-        return containerInfo
+    return conInfo;
+}
 
+// Insert Data into GridDB
+async function insertIntoGridDB(data, store, conInfo) {
+    try {
+        // Check if the container exists
         let container;
-        try {
-            container = await store.getContainer(containerName);
-            console.log(`Container '${containerName}' already exists.`);
-        } catch (e) {
-            console.log(`Creating new container '${containerName}'.`);
-            container = await store.putContainer(containerInfo);
-            await container.createIndex({
-                'columnName': 'id',
-                'indexType': griddb.IndexType.DEFAULT
-            });
-        }
 
-        let id = 0;
-        const rows = [];
+        // Create a new container
+        console.log(`New container created '${conInfo.name}'.`);
+        container = await store.putContainer(conInfo);
+
+        // Insert data into the container one by one
         for (const [occupation, stats] of Object.entries(data)) {
-            id++;
-            rows.push([
-                id,
+            const rowData = [
                 occupation,
                 stats.minIncome,
                 stats.maxIncome,
                 stats.minFamilySize,
                 stats.maxFamilySize
-            ]);
+            ];
+
+            const result = await insert(rowData, container);
+            if (result.status) {
+                console.log(`Data for occupation '${occupation}' successfully inserted.`);
+            } else {
+                console.error(`Error inserting data for occupation '${occupation}':`, result.error);
+            }
         }
-
-        await container.multiPut(rows);
-        console.log('Data successfully inserted into GridDB.');
-
     } catch (error) {
         console.error('Error during GridDB operations:', error);
-        throw error; // Re-throw to ensure main catches it
+        throw error;
     }
 }
+
 
 // Main function
 async function main() {
@@ -111,8 +118,12 @@ async function main() {
         const csvFilePath = 'input.csv';
         const data = await readCSV(csvFilePath);
         const processedData = processData(data);
-        console.log('Processed Data:', processedData); // Debugging statement
-        await insertIntoGridDB(processedData);
+        console.log('Processed Data:', processedData);
+
+        // Initialize GridDB and Container within the main function
+        const store = await initStore();
+        const conInfo = initContainer();
+        await insertIntoGridDB(processedData, store, conInfo);
     } catch (error) {
         console.error('Error in main function:', error);
     }
