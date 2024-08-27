@@ -20,14 +20,12 @@ get_ipadress() {
 # Config for fixed_list method
 fixlist_config() {
     # Remove "notificationAddress" and "notificationPort"
-    jq 'del(.cluster.notificationAddress) | del(.cluster.notificationPort)' /var/lib/gridstore/conf/gs_cluster.json | tee tmp.json > /dev/null
+    jq 'del(.cluster.notificationAddress, .cluster.notificationPort)' /var/lib/gridstore/conf/gs_cluster.json > tmp.json
 
     # Config notification member for Fixed_List method
-    jq '.cluster |= .+ {"notificationMember": [{"cluster":{"address", "port":10010}, "sync":{"address","port":10020}, "system":{"address", "port":10040}, "transaction":{"address", "port":10001}, "sql":{"address", "port":20001}}]}' tmp.json | tee tmp_gs_cluster.json >/dev/null
+    jq --arg ip "$ip_address" '.cluster.notificationMember = [{"cluster":{"address":$ip, "port":10010}, "sync":{"address":$ip,"port":10020}, "system":{"address":$ip, "port":10040}, "transaction":{"address":$ip, "port":10001}, "sql":{"address":$ip, "port":20001}}]' tmp.json > tmp_gs_cluster.json
     mv tmp_gs_cluster.json /var/lib/gridstore/conf/gs_cluster.json
     rm tmp.json
-    # Set IP address
-    sed -i -e s/\"address\":\ null/\"address\":\"$ip_address\"/g \/var/lib/gridstore/conf/gs_cluster.json
 }
 
 # First parameter after run images
@@ -46,28 +44,27 @@ if [ "${1}" = 'griddb' ]; then
         cp /usr/griddb-${GRIDDB_VERSION}/conf_multicast/* /var/lib/gridstore/conf/.
         # Extra modification based on environment variable
         gs_passwd $GRIDDB_USERNAME -p $GRIDDB_PASSWORD
-        sed -i -e s/\"clusterName\":\"\"/\"clusterName\":\"$GRIDDB_CLUSTER_NAME\"/g \/var/lib/gridstore/conf/gs_cluster.json
+        sed -i "s/\"clusterName\":\"\"/\"clusterName\":\"$GRIDDB_CLUSTER_NAME\"/" /var/lib/gridstore/conf/gs_cluster.json
 
         # MULTICAST mode
         if [ ! -z $NOTIFICATION_ADDRESS ]; then
             echo "MULTICAST mode address"
-            sed -i -e s/\"notificationAddress\":\"239.0.0.1\"/\"notificationAddress\":\"$NOTIFICATION_ADDRESS\"/g \/var/lib/gridstore/conf/gs_cluster.json
+            sed -i "s/\"notificationAddress\":\"239.0.0.1\"/\"notificationAddress\":\"$NOTIFICATION_ADDRESS\"/" /var/lib/gridstore/conf/gs_cluster.json
         fi
 
         if [ ! -z $NOTIFICATION_PORT ]; then
             echo "MULTICAST mode port"
-            sed -i -e s/\"notificationPort\":31999/\"notificationPort\":$NOTIFICATION_PORT/g \/var/lib/gridstore/conf/gs_cluster.json
+            sed -i "s/\"notificationPort\":31999/\"notificationPort\":$NOTIFICATION_PORT/" /var/lib/gridstore/conf/gs_cluster.json
         fi
 
         # FIXED_LIST mode
         if [ ! -z $NOTIFICATION_MEMBER ]; then
             echo "Fixed List mode"
             if [ $NOTIFICATION_MEMBER != 1 ]; then
-                echo "$NOTIFICATION_MEMBER invalid. Fixed list GridDB CE mode support one member, please check again !"
+                echo "$NOTIFICATION_MEMBER invalid. Fixed list GridDB CE mode supports one member, please check again!"
                 exit 1
             fi
-            checkFixList=$(cat /var/lib/gridstore/conf/gs_cluster.json | grep notificationMember)
-            if [ ! -z checkFixList ]; then
+            if grep -q 'notificationMember' /var/lib/gridstore/conf/gs_cluster.json; then
                 get_ipadress
                 fixlist_config
             fi
@@ -75,7 +72,7 @@ if [ "${1}" = 'griddb' ]; then
 
         # PROVIDER mode
         if [ ! -z $NOTIFICATION_PROVIDER ]; then
-            echo "Provider mode haven't support"
+            echo "Provider mode hasn't supported"
             exit 1
         fi
 

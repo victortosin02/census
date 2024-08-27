@@ -1,9 +1,7 @@
 services:
   griddb-server:
-    build:
-      context: griddb-server
-      dockerfile: Dockerfile
-    container_name: griddb-server
+    image: griddb/griddb
+    container_name: griddb-server7-old
     user: root
     expose:
       - '10001'
@@ -20,7 +18,7 @@ services:
       timeout: 120s
       retries: 5
     networks:
-      - census-master5_default
+      - griddb-net
 
   census-analysis:
     build:
@@ -32,8 +30,8 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - census-master5_default
+      - griddb-net
 
 networks:
-  census-master5_default:
+  griddb-net:
     external: true
